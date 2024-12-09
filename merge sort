@@ -1,97 +1,101 @@
-/* C program for Merge Sort */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+// Comparison function type
+typedef int (*compare_func)(const void*, const void*);
 
 // Merges two subarrays of arr[].
 // First subarray is arr[l..m]
 // Second subarray is arr[m+1..r]
-void merge(int arr[], int l, int m, int r)
-{
-	int i, j, k;
-	int n1 = m - l + 1;
-	int n2 = r - m;
+void merge(void* arr, int l, int m, int r, size_t size, compare_func cmp) {
+    int n1 = m - l + 1;
+    int n2 = r - m;
 
-	/* create temp arrays */
-	int L[n1], R[n2];
+    // Create temp arrays
+    void* L = malloc(n1 * size);
+    void* R = malloc(n2 * size);
 
-	/* Copy data to temp arrays L[] and R[] */
-	for (i = 0; i < n1; i++)
-		L[i] = arr[l + i];
-	for (j = 0; j < n2; j++)
-		R[j] = arr[m + 1 + j];
+    // Check for memory allocation failure
+    if (L == NULL || R == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
 
-	/* Merge the temp arrays back into arr[l..r]*/
-	i = 0; // Initial index of first subarray
-	j = 0; // Initial index of second subarray
-	k = l; // Initial index of merged subarray
-	while (i < n1 && j < n2) {
-		if (L[i] <= R[j]) {
-			arr[k] = L[i];
-			i++;
-		}
-		else {
-			arr[k] = R[j];
-			j++;
-		}
-		k++;
-	}
+    // Copy data to temp arrays L[] and R[]
+    memcpy(L, (char*)arr + l * size, n1 * size);
+    memcpy(R, (char*)arr + (m + 1) * size, n2 * size);
 
-	/* Copy the remaining elements of L[], if there
-	are any */
-	while (i < n1) {
-		arr[k] = L[i];
-		i++;
-		k++;
-	}
+    // Merge the temp arrays back into arr[l..r]
+    int i = 0; // Initial index of first subarray
+    int j = 0; // Initial index of second subarray
+    int k = l; // Initial index of merged subarray
 
-	/* Copy the remaining elements of R[], if there
-	are any */
-	while (j < n2) {
-		arr[k] = R[j];
-		j++;
-		k++;
-	}
+    while (i < n1 && j < n2) {
+        if (cmp((char*)L + i * size, (char*)R + j * size) <= 0) {
+            memcpy((char*)arr + k * size, (char*)L + i * size, size);
+            i++;
+        } else {
+            memcpy((char*)arr + k * size, (char*)R + j * size, size);
+            j++;
+        }
+        k++;
+    }
+
+    // Copy the remaining elements of L[], if there are any
+    while (i < n1) {
+        memcpy((char*)arr + k * size, (char*)L + i * size, size);
+        i++;
+        k++;
+    }
+
+    // Copy the remaining elements of R[], if there are any
+    while (j < n2) {
+        memcpy((char*)arr + k * size, (char*)R + j * size, size);
+        j++;
+        k++;
+    }
+
+    // Free allocated memory
+    free(L);
+    free(R);
 }
 
-/* l is for left index and r is right index of the
-sub-array of arr to be sorted */
-void mergeSort(int arr[], int l, int r)
-{
-	if (l < r) {
-		// Same as (l+r)/2, but avoids overflow for
-		// large l and h
-		int m = l + (r - l) / 2;
+// Function to perform merge sort
+void mergeSort(void* arr, int l, int r, size_t size, compare_func cmp) {
+    if (l < r) {
+        int m = l + (r - l) / 2;
 
-		// Sort first and second halves
-		mergeSort(arr, l, m);
-		mergeSort(arr, m + 1, r);
-
-		merge(arr, l, m, r);
-	}
+        mergeSort(arr, l, m, size, cmp);
+        mergeSort(arr, m + 1, r, size, cmp);
+        merge(arr, l, m, r, size, cmp);
+    }
 }
 
-/* UTILITY FUNCTIONS */
-/* Function to print an array */
-void printArray(int A[], int size)
-{
-	int i;
-	for (i = 0; i < size; i++)
-		printf("%d ", A[i]);
-	printf("\n");
+// Function to print an array of integers
+void printIntArray(int* arr, int size) {
+    for (int i = 0; i < size; i++)
+        printf("%d ", arr[i]);
+    printf("\n");
 }
 
-/* Driver code */
-int main()
-{
-	int arr[] = { 12, 11, 13, 5, 6, 7 };
-	int arr_size = sizeof(arr) / sizeof(arr[0]);
+// Comparison function for integers
+int compareInt(const void* a, const void* b) {
+    return (*(int*)a - *(int*)b);
+}
 
-	printf("Given array is \n");
-	printArray(arr, arr_size);
+// Driver code
+int main() {
+    int arr[] = {12, 11, 13, 5, 6, 7};
+    int arr_size = sizeof(arr) / sizeof(arr[0]);
 
-	mergeSort(arr, 0, arr_size - 1);
+    printf("Given array is \n");
+    printIntArray(arr, arr_size);
 
-	printf("\nSorted array is \n");
-	printArray(arr, arr_size);
-	return 0;
+    mergeSort(arr, 0, arr_size - 1, sizeof(int), compareInt);
+
+    printf("\nSorted array is \n");
+    printIntArray(arr, arr_size);
+
+    return 0;
 }
